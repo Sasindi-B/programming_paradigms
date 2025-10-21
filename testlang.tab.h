@@ -54,10 +54,23 @@ extern int yydebug;
     YYEOF = 0,                     /* "end of file"  */
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
-    GET = 258,                     /* GET  */
-    POST = 259,                    /* POST  */
+    TEST = 258,                    /* TEST  */
+    REQUEST = 259,                 /* REQUEST  */
     ASSERT = 260,                  /* ASSERT  */
-    STRING = 261                   /* STRING  */
+    METHOD = 261,                  /* METHOD  */
+    URL = 262,                     /* URL  */
+    HEADERS = 263,                 /* HEADERS  */
+    BODY = 264,                    /* BODY  */
+    STRING = 265,                  /* STRING  */
+    IDENTIFIER = 266,              /* IDENTIFIER  */
+    HTTP_METHOD = 267,             /* HTTP_METHOD  */
+    NUMBER = 268,                  /* NUMBER  */
+    EQ = 269,                      /* EQ  */
+    CONTAINS = 270,                /* CONTAINS  */
+    LBRACE = 271,                  /* LBRACE  */
+    RBRACE = 272,                  /* RBRACE  */
+    COLON = 273,                   /* COLON  */
+    DOT = 274                      /* DOT  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -66,11 +79,12 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 19 "testlang.y"
+#line 16 "testlang.y"
 
     char* str;
+    int num;
 
-#line 74 "testlang.tab.h"
+#line 88 "testlang.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

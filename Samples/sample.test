@@ -1,3 +1,14 @@
-GET "https://jsonplaceholder.typicode.com/posts/1"
-POST "https://jsonplaceholder.typicode.com/posts"
-ASSERT "status == 200"
+TEST getUser {
+  REQUEST {
+    METHOD: GET
+    URL: "https://api.example.com/users/1"
+    HEADERS {
+      "Authorization": "Bearer token123"
+    }
+  }
+
+  ASSERT {
+    status == 200
+    body.name == "Alice"
+  }
+}

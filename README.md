@@ -13,3 +13,7 @@ Implement a scanner and parser using Lex and Bison.
 Translate .test files into runnable Java test code.
 
 Automatically execute HTTP requests (GET/POST) using Java’s HttpClient.
+#refer the Makefile
+In the terminal
+make
+make run

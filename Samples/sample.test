@@ -1,0 +1,14 @@
+TEST getUser {
+  REQUEST {
+    METHOD: GET
+    URL: "https://api.example.com/users/1"
+    HEADERS {
+      "Authorization": "Bearer token123"
+    }
+  }
+
+  ASSERT {
+    status == 200
+    body.name == "Alice"
+  }
+}

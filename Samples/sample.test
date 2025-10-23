@@ -1,14 +1,18 @@
+config {
+  base_url = "http://localhost:8080";
+  header "Content-Type" = "application/json";
+  header "X-App" = "TestLangDemo";
+}
+
+let user = "admin";
+let id = 42;
+
 TEST getUser {
   REQUEST {
     METHOD: GET
-    URL: "https://api.example.com/users/1"
-    HEADERS {
-      "Authorization": "Bearer token123"
-    }
+    URL: "/api/users/$id"
   }
-
   ASSERT {
     status == 200
-    body.name == "Alice"
   }
 }

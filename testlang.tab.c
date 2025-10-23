@@ -123,30 +123,44 @@ enum yysymbol_kind_t
   YYSYMBOL_STRING = 10,                    /* STRING  */
   YYSYMBOL_IDENTIFIER = 11,                /* IDENTIFIER  */
   YYSYMBOL_HTTP_METHOD = 12,               /* HTTP_METHOD  */
-  YYSYMBOL_NUMBER = 13,                    /* NUMBER  */
-  YYSYMBOL_EQ = 14,                        /* EQ  */
-  YYSYMBOL_CONTAINS = 15,                  /* CONTAINS  */
-  YYSYMBOL_LBRACE = 16,                    /* LBRACE  */
-  YYSYMBOL_RBRACE = 17,                    /* RBRACE  */
-  YYSYMBOL_COLON = 18,                     /* COLON  */
-  YYSYMBOL_DOT = 19,                       /* DOT  */
-  YYSYMBOL_20_status_ = 20,                /* "status"  */
-  YYSYMBOL_21_body_ = 21,                  /* "body"  */
-  YYSYMBOL_YYACCEPT = 22,                  /* $accept  */
-  YYSYMBOL_program = 23,                   /* program  */
-  YYSYMBOL_test_list = 24,                 /* test_list  */
-  YYSYMBOL_test = 25,                      /* test  */
-  YYSYMBOL_test_body = 26,                 /* test_body  */
-  YYSYMBOL_request_section = 27,           /* request_section  */
-  YYSYMBOL_method_decl = 28,               /* method_decl  */
-  YYSYMBOL_url_decl = 29,                  /* url_decl  */
-  YYSYMBOL_headers_opt = 30,               /* headers_opt  */
-  YYSYMBOL_header_list = 31,               /* header_list  */
-  YYSYMBOL_header = 32,                    /* header  */
-  YYSYMBOL_body_opt = 33,                  /* body_opt  */
-  YYSYMBOL_assert_section = 34,            /* assert_section  */
-  YYSYMBOL_assert_list = 35,               /* assert_list  */
-  YYSYMBOL_assert = 36                     /* assert  */
+  YYSYMBOL_VARREF = 13,                    /* VARREF  */
+  YYSYMBOL_NUMBER = 14,                    /* NUMBER  */
+  YYSYMBOL_EQ = 15,                        /* EQ  */
+  YYSYMBOL_CONTAINS = 16,                  /* CONTAINS  */
+  YYSYMBOL_ASSIGN = 17,                    /* ASSIGN  */
+  YYSYMBOL_SEMICOLON = 18,                 /* SEMICOLON  */
+  YYSYMBOL_CONFIG = 19,                    /* CONFIG  */
+  YYSYMBOL_BASE_URL = 20,                  /* BASE_URL  */
+  YYSYMBOL_HEADER = 21,                    /* HEADER  */
+  YYSYMBOL_LET = 22,                       /* LET  */
+  YYSYMBOL_LBRACE = 23,                    /* LBRACE  */
+  YYSYMBOL_RBRACE = 24,                    /* RBRACE  */
+  YYSYMBOL_COLON = 25,                     /* COLON  */
+  YYSYMBOL_DOT = 26,                       /* DOT  */
+  YYSYMBOL_27_status_ = 27,                /* "status"  */
+  YYSYMBOL_28_body_ = 28,                  /* "body"  */
+  YYSYMBOL_YYACCEPT = 29,                  /* $accept  */
+  YYSYMBOL_program = 30,                   /* program  */
+  YYSYMBOL_config_opt = 31,                /* config_opt  */
+  YYSYMBOL_config_body = 32,               /* config_body  */
+  YYSYMBOL_config_item = 33,               /* config_item  */
+  YYSYMBOL_var_list_opt = 34,              /* var_list_opt  */
+  YYSYMBOL_var_list = 35,                  /* var_list  */
+  YYSYMBOL_var_decl = 36,                  /* var_decl  */
+  YYSYMBOL_value = 37,                     /* value  */
+  YYSYMBOL_test_list = 38,                 /* test_list  */
+  YYSYMBOL_test = 39,                      /* test  */
+  YYSYMBOL_test_body = 40,                 /* test_body  */
+  YYSYMBOL_request_section = 41,           /* request_section  */
+  YYSYMBOL_method_decl = 42,               /* method_decl  */
+  YYSYMBOL_url_decl = 43,                  /* url_decl  */
+  YYSYMBOL_headers_opt = 44,               /* headers_opt  */
+  YYSYMBOL_header_list = 45,               /* header_list  */
+  YYSYMBOL_header = 46,                    /* header  */
+  YYSYMBOL_body_opt = 47,                  /* body_opt  */
+  YYSYMBOL_assert_section = 48,            /* assert_section  */
+  YYSYMBOL_assert_list = 49,               /* assert_list  */
+  YYSYMBOL_assert = 50                     /* assert  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -472,21 +486,21 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  6
+#define YYFINAL  5
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   48
+#define YYLAST   92
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  22
+#define YYNTOKENS  29
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  15
+#define YYNNTS  22
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  22
+#define YYNRULES  36
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  54
+#define YYNSTATES  82
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   276
+#define YYMAXUTOK   283
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -527,16 +541,18 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
+      25,    26,    27,    28
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    29,    29,    33,    34,    38,    53,    57,    61,    67,
-      72,    74,    78,    79,    83,    88,    90,    96,   100,   101,
-     105,   108,   111
+       0,    37,    37,    41,    43,    47,    48,    52,    55,    61,
+      63,    67,    68,    72,    78,    79,    88,    89,    93,   108,
+     113,   117,   123,   126,   131,   133,   137,   138,   142,   148,
+     150,   157,   161,   162,   166,   169,   172
 };
 #endif
 
@@ -554,11 +570,13 @@ static const char *const yytname[] =
 {
   "\"end of file\"", "error", "\"invalid token\"", "TEST", "REQUEST",
   "ASSERT", "METHOD", "URL", "HEADERS", "BODY", "STRING", "IDENTIFIER",
-  "HTTP_METHOD", "NUMBER", "EQ", "CONTAINS", "LBRACE", "RBRACE", "COLON",
-  "DOT", "\"status\"", "\"body\"", "$accept", "program", "test_list",
-  "test", "test_body", "request_section", "method_decl", "url_decl",
-  "headers_opt", "header_list", "header", "body_opt", "assert_section",
-  "assert_list", "assert", YY_NULLPTR
+  "HTTP_METHOD", "VARREF", "NUMBER", "EQ", "CONTAINS", "ASSIGN",
+  "SEMICOLON", "CONFIG", "BASE_URL", "HEADER", "LET", "LBRACE", "RBRACE",
+  "COLON", "DOT", "\"status\"", "\"body\"", "$accept", "program",
+  "config_opt", "config_body", "config_item", "var_list_opt", "var_list",
+  "var_decl", "value", "test_list", "test", "test_body", "request_section",
+  "method_decl", "url_decl", "headers_opt", "header_list", "header",
+  "body_opt", "assert_section", "assert_list", "assert", YY_NULLPTR
 };
 
 static const char *
@@ -568,7 +586,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-19)
+#define YYPACT_NINF (-27)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -582,12 +600,15 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-       3,    -1,    11,     3,   -19,    -4,   -19,   -19,     9,    -2,
-       0,    10,    12,   -19,     4,   -19,     1,    14,   -18,    13,
-       5,     8,    15,     7,   -16,   -19,   -19,    17,     6,    19,
-      18,    21,   -19,   -19,   -19,    20,    16,    22,   -19,    -6,
-      23,   -10,   -19,    25,   -19,    26,    27,    28,   -19,   -19,
-     -19,   -19,   -19,   -19
+       0,    -3,    13,     1,    -5,   -27,    10,    19,     1,   -27,
+       7,    15,   -19,   -27,     9,    16,    19,   -27,   -27,    18,
+      12,   -27,   -27,    -6,     8,   -27,    14,    20,   -27,   -27,
+      17,    29,   -27,    21,   -27,    11,    22,    31,   -27,    32,
+     -27,    24,   -27,    23,    30,   -17,    28,    25,    33,    27,
+      26,   -21,   -27,   -27,    -1,    34,    35,    37,    38,   -27,
+     -27,   -27,   -27,    43,    36,    39,   -27,     2,    40,   -10,
+     -27,    44,   -27,    45,    46,    48,   -27,   -27,   -27,   -27,
+     -27,   -27
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -595,26 +616,31 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     0,     0,     2,     3,     0,     1,     4,     0,     0,
-       0,     0,     0,     5,     0,     6,     0,     0,     0,     0,
-       0,    10,     0,     0,     0,    18,     8,     0,     0,    15,
-       0,     0,    17,    19,     9,     0,     0,     0,    20,     0,
-       0,     0,    12,     0,     7,     0,     0,     0,    11,    13,
-      16,    21,    22,    14
+       3,     0,     0,     9,     0,     1,     0,     0,    10,    11,
+       0,     0,     0,     5,     0,     0,     2,    16,    12,     0,
+       0,     4,     6,     0,     0,    17,     0,     0,    14,    15,
+       0,     0,     7,     0,    13,     0,     0,     0,     8,     0,
+      18,     0,    19,     0,     0,     0,     0,     0,    24,     0,
+       0,     0,    32,    21,     0,     0,    29,     0,     0,    31,
+      33,    22,    23,     0,     0,     0,    34,     0,     0,     0,
+      26,     0,    20,     0,     0,     0,    25,    27,    30,    35,
+      36,    28
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -19,   -19,   -19,    30,   -19,   -19,   -19,   -19,   -19,   -19,
-     -17,   -19,   -19,   -19,    24
+     -27,   -27,   -27,   -27,    47,   -27,   -27,    52,   -27,   -27,
+      50,   -27,   -27,   -27,   -27,   -27,   -27,   -26,   -27,   -27,
+     -27,    41
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     2,     3,     4,    10,    11,    17,    21,    29,    41,
-      42,    37,    15,    24,    25
+       0,     2,     3,    12,    13,     7,     8,     9,    30,    16,
+      17,    36,    37,    44,    48,    56,    69,    70,    65,    42,
+      51,    52
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -622,48 +648,63 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      40,    32,    22,    23,    22,    23,     1,    48,    45,    46,
-       5,     6,     8,     9,    12,    14,    28,    13,    16,    19,
-      18,    20,    35,    27,    49,    26,    31,    34,    36,    30,
-      40,    38,    39,     7,    43,    50,    51,    52,    53,    44,
-       0,    47,     0,     0,     0,     0,     0,     0,    33
+      68,    10,    11,    59,    28,    21,    49,    50,    29,    61,
+      49,    50,    62,     5,    76,    10,    11,    73,    74,     1,
+       4,    14,    15,     6,    19,    20,    23,    24,    26,    27,
+      33,    31,    32,    35,    39,    34,    41,    47,    43,    38,
+      53,    55,    57,    77,    64,     0,    40,    45,    46,    67,
+      54,    66,    58,    68,    78,    79,    80,    63,    81,    22,
+      18,    71,     0,    72,     0,    75,    25,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,    60
 };
 
 static const yytype_int8 yycheck[] =
 {
-      10,    17,    20,    21,    20,    21,     3,    17,    14,    15,
-      11,     0,    16,     4,    16,     5,     8,    17,     6,    18,
-      16,     7,    16,    18,    41,    12,    19,    10,     9,    14,
-      10,    13,    11,     3,    18,    10,    10,    10,    10,    17,
-      -1,    18,    -1,    -1,    -1,    -1,    -1,    -1,    24
+      10,    20,    21,    24,    10,    24,    27,    28,    14,    10,
+      27,    28,    13,     0,    24,    20,    21,    15,    16,    19,
+      23,    11,     3,    22,    17,    10,    17,    11,    10,    17,
+      10,    23,    18,     4,    23,    18,     5,     7,     6,    18,
+      12,     8,    15,    69,     9,    -1,    24,    23,    25,    11,
+      25,    14,    26,    10,    10,    10,    10,    23,    10,    12,
+       8,    25,    -1,    24,    -1,    25,    16,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    51
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,    23,    24,    25,    11,     0,    25,    16,     4,
-      26,    27,    16,    17,     5,    34,     6,    28,    16,    18,
-       7,    29,    20,    21,    35,    36,    12,    18,     8,    30,
-      14,    19,    17,    36,    10,    16,     9,    33,    13,    11,
-      10,    31,    32,    18,    17,    14,    15,    18,    17,    32,
-      10,    10,    10,    10
+       0,    19,    30,    31,    23,     0,    22,    34,    35,    36,
+      20,    21,    32,    33,    11,     3,    38,    39,    36,    17,
+      10,    24,    33,    17,    11,    39,    10,    17,    10,    14,
+      37,    23,    18,    10,    18,     4,    40,    41,    18,    23,
+      24,     5,    48,     6,    42,    23,    25,     7,    43,    27,
+      28,    49,    50,    12,    25,     8,    44,    15,    26,    24,
+      50,    10,    13,    23,     9,    47,    14,    11,    10,    45,
+      46,    25,    24,    15,    16,    25,    24,    46,    10,    10,
+      10,    10
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    22,    23,    24,    24,    25,    26,    27,    28,    29,
-      30,    30,    31,    31,    32,    33,    33,    34,    35,    35,
-      36,    36,    36
+       0,    29,    30,    31,    31,    32,    32,    33,    33,    34,
+      34,    35,    35,    36,    37,    37,    38,    38,    39,    40,
+      41,    42,    43,    43,    44,    44,    45,    45,    46,    47,
+      47,    48,    49,    49,    50,    50,    50
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     1,     1,     2,     5,     2,     7,     3,     3,
-       0,     4,     1,     2,     3,     0,     3,     4,     1,     2,
-       3,     5,     5
+       0,     2,     3,     0,     4,     1,     2,     4,     5,     0,
+       1,     1,     2,     5,     1,     1,     1,     2,     5,     2,
+       7,     3,     3,     3,     0,     4,     1,     2,     3,     0,
+       3,     4,     1,     2,     3,     5,     5
 };
 
 
@@ -1126,14 +1167,54 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 2: /* program: test_list  */
-#line 29 "testlang.y"
-              { fprintf(out, "}\n"); }
-#line 1133 "testlang.tab.c"
+  case 2: /* program: config_opt var_list_opt test_list  */
+#line 37 "testlang.y"
+                                      { fprintf(out, "}\n"); }
+#line 1174 "testlang.tab.c"
     break;
 
-  case 5: /* test: TEST IDENTIFIER LBRACE test_body RBRACE  */
-#line 38 "testlang.y"
+  case 7: /* config_item: BASE_URL ASSIGN STRING SEMICOLON  */
+#line 52 "testlang.y"
+                                     {
+        fprintf(out, "    private static final String BASE_URL = %s;\n", (yyvsp[-1].str));
+    }
+#line 1182 "testlang.tab.c"
+    break;
+
+  case 8: /* config_item: HEADER STRING ASSIGN STRING SEMICOLON  */
+#line 55 "testlang.y"
+                                          {
+        fprintf(out, "    // default header %s = %s\n", (yyvsp[-3].str), (yyvsp[-1].str));
+    }
+#line 1190 "testlang.tab.c"
+    break;
+
+  case 13: /* var_decl: LET IDENTIFIER ASSIGN value SEMICOLON  */
+#line 72 "testlang.y"
+                                          {
+        fprintf(out, "    private static final String %s = %s;\n", (yyvsp[-3].str), (yyvsp[-1].str));
+    }
+#line 1198 "testlang.tab.c"
+    break;
+
+  case 14: /* value: STRING  */
+#line 78 "testlang.y"
+           { (yyval.str) = (yyvsp[0].str); }
+#line 1204 "testlang.tab.c"
+    break;
+
+  case 15: /* value: NUMBER  */
+#line 79 "testlang.y"
+           {
+        char buf[32];
+        sprintf(buf, "\"%d\"", (yyvsp[0].num));
+        (yyval.str) = strdup(buf);
+    }
+#line 1214 "testlang.tab.c"
+    break;
+
+  case 18: /* test: TEST IDENTIFIER LBRACE test_body RBRACE  */
+#line 93 "testlang.y"
                                             {
         fprintf(out, "\n    @Test\n");
         fprintf(out, "    public void %s() throws Exception {\n", (yyvsp[-3].str));
@@ -1146,67 +1227,75 @@ yyreduce:
         fprintf(out, "        Assertions.assertEquals(expectedStatus, response.statusCode());\n");
         fprintf(out, "    }\n");
     }
-#line 1150 "testlang.tab.c"
+#line 1231 "testlang.tab.c"
     break;
 
-  case 8: /* method_decl: METHOD COLON HTTP_METHOD  */
-#line 61 "testlang.y"
+  case 21: /* method_decl: METHOD COLON HTTP_METHOD  */
+#line 117 "testlang.y"
                              {
         fprintf(out, "        String method = \"%s\";\n", (yyvsp[0].str));
     }
-#line 1158 "testlang.tab.c"
+#line 1239 "testlang.tab.c"
     break;
 
-  case 9: /* url_decl: URL COLON STRING  */
-#line 67 "testlang.y"
+  case 22: /* url_decl: URL COLON STRING  */
+#line 123 "testlang.y"
                      {
         fprintf(out, "        String url = %s;\n", (yyvsp[0].str));
     }
-#line 1166 "testlang.tab.c"
+#line 1247 "testlang.tab.c"
     break;
 
-  case 14: /* header: STRING COLON STRING  */
-#line 83 "testlang.y"
+  case 23: /* url_decl: URL COLON VARREF  */
+#line 126 "testlang.y"
+                     {
+        fprintf(out, "        String url = %s;\n", (yyvsp[0].str));
+    }
+#line 1255 "testlang.tab.c"
+    break;
+
+  case 28: /* header: STRING COLON STRING  */
+#line 142 "testlang.y"
                         {
         fprintf(out, "        // header %s: %s\n", (yyvsp[-2].str), (yyvsp[0].str));
     }
-#line 1174 "testlang.tab.c"
+#line 1263 "testlang.tab.c"
     break;
 
-  case 16: /* body_opt: BODY COLON STRING  */
-#line 90 "testlang.y"
+  case 30: /* body_opt: BODY COLON STRING  */
+#line 150 "testlang.y"
                       {
         fprintf(out, "        String body = %s;\n", (yyvsp[0].str));
     }
-#line 1182 "testlang.tab.c"
+#line 1271 "testlang.tab.c"
     break;
 
-  case 20: /* assert: "status" EQ NUMBER  */
-#line 105 "testlang.y"
+  case 34: /* assert: "status" EQ NUMBER  */
+#line 166 "testlang.y"
                        {
         fprintf(out, "        int expectedStatus = %d;\n", (yyvsp[0].num));
     }
-#line 1190 "testlang.tab.c"
+#line 1279 "testlang.tab.c"
     break;
 
-  case 21: /* assert: "body" DOT IDENTIFIER EQ STRING  */
-#line 108 "testlang.y"
+  case 35: /* assert: "body" DOT IDENTIFIER EQ STRING  */
+#line 169 "testlang.y"
                                     {
         fprintf(out, "        // assert body.%s == %s\n", (yyvsp[-2].str), (yyvsp[0].str));
     }
-#line 1198 "testlang.tab.c"
+#line 1287 "testlang.tab.c"
     break;
 
-  case 22: /* assert: "body" DOT IDENTIFIER CONTAINS STRING  */
-#line 111 "testlang.y"
+  case 36: /* assert: "body" DOT IDENTIFIER CONTAINS STRING  */
+#line 172 "testlang.y"
                                           {
         fprintf(out, "        // assert body.%s contains %s\n", (yyvsp[-2].str), (yyvsp[0].str));
     }
-#line 1206 "testlang.tab.c"
+#line 1295 "testlang.tab.c"
     break;
 
 
-#line 1210 "testlang.tab.c"
+#line 1299 "testlang.tab.c"
 
       default: break;
     }
@@ -1399,7 +1488,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 115 "testlang.y"
+#line 177 "testlang.y"
 
 
 int main(int argc, char **argv) {
@@ -1420,7 +1509,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // write Java class header
     fprintf(out, "import org.junit.jupiter.api.*;\n");
     fprintf(out, "import java.net.http.*;\n");
     fprintf(out, "import java.net.URI;\n");

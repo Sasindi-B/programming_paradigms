@@ -64,13 +64,20 @@ extern int yydebug;
     STRING = 265,                  /* STRING  */
     IDENTIFIER = 266,              /* IDENTIFIER  */
     HTTP_METHOD = 267,             /* HTTP_METHOD  */
-    NUMBER = 268,                  /* NUMBER  */
-    EQ = 269,                      /* EQ  */
-    CONTAINS = 270,                /* CONTAINS  */
-    LBRACE = 271,                  /* LBRACE  */
-    RBRACE = 272,                  /* RBRACE  */
-    COLON = 273,                   /* COLON  */
-    DOT = 274                      /* DOT  */
+    VARREF = 268,                  /* VARREF  */
+    NUMBER = 269,                  /* NUMBER  */
+    EQ = 270,                      /* EQ  */
+    CONTAINS = 271,                /* CONTAINS  */
+    ASSIGN = 272,                  /* ASSIGN  */
+    SEMICOLON = 273,               /* SEMICOLON  */
+    CONFIG = 274,                  /* CONFIG  */
+    BASE_URL = 275,                /* BASE_URL  */
+    HEADER = 276,                  /* HEADER  */
+    LET = 277,                     /* LET  */
+    LBRACE = 278,                  /* LBRACE  */
+    RBRACE = 279,                  /* RBRACE  */
+    COLON = 280,                   /* COLON  */
+    DOT = 281                      /* DOT  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -84,7 +91,7 @@ union YYSTYPE
     char* str;
     int num;
 
-#line 88 "testlang.tab.h"
+#line 95 "testlang.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

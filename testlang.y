@@ -18,17 +18,72 @@ void yyerror(const char *s) {
     int num;
 }
 
+/* --- Tokens from lexer --- */
 %token <str> TEST REQUEST ASSERT METHOD URL HEADERS BODY
-%token <str> STRING IDENTIFIER HTTP_METHOD
+%token <str> STRING IDENTIFIER HTTP_METHOD VARREF
 %token <num> NUMBER
-%token EQ CONTAINS
+%token EQ CONTAINS ASSIGN SEMICOLON
+%token CONFIG BASE_URL HEADER LET
 %token LBRACE RBRACE COLON DOT
 
+/* --- Type declarations for nonterminals --- */
+%type <str> value
+%type <str> var_decl
+%type <str> config_item
+
 %%
+
 program:
-    test_list { fprintf(out, "}\n"); }
+    config_opt var_list_opt test_list { fprintf(out, "}\n"); }
 ;
 
+/* ---------- CONFIG BLOCK ---------- */
+config_opt:
+    /* empty */
+  | CONFIG LBRACE config_body RBRACE
+;
+
+config_body:
+    config_item
+  | config_body config_item
+;
+
+config_item:
+    BASE_URL ASSIGN STRING SEMICOLON {
+        fprintf(out, "    private static final String BASE_URL = %s;\n", $3);
+    }
+  | HEADER STRING ASSIGN STRING SEMICOLON {
+        fprintf(out, "    // default header %s = %s\n", $2, $4);
+    }
+;
+
+/* ---------- VARIABLES ---------- */
+var_list_opt:
+    /* empty */
+  | var_list
+;
+
+var_list:
+    var_decl
+  | var_list var_decl
+;
+
+var_decl:
+    LET IDENTIFIER ASSIGN value SEMICOLON {
+        fprintf(out, "    private static final String %s = %s;\n", $2, $4);
+    }
+;
+
+value:
+    STRING { $$ = $1; }
+  | NUMBER {
+        char buf[32];
+        sprintf(buf, "\"%d\"", $1);
+        $$ = strdup(buf);
+    }
+;
+
+/* ---------- TESTS ---------- */
 test_list:
     test
   | test_list test
@@ -53,6 +108,7 @@ test_body:
     request_section assert_section
 ;
 
+/* ---------- REQUEST SECTION ---------- */
 request_section:
     REQUEST LBRACE method_decl url_decl headers_opt body_opt RBRACE
 ;
@@ -65,6 +121,9 @@ method_decl:
 
 url_decl:
     URL COLON STRING {
+        fprintf(out, "        String url = %s;\n", $3);
+    }
+  | URL COLON VARREF {
         fprintf(out, "        String url = %s;\n", $3);
     }
 ;
@@ -85,6 +144,7 @@ header:
     }
 ;
 
+/* ---------- BODY SECTION ---------- */
 body_opt:
     /* empty */
   | BODY COLON STRING {
@@ -92,6 +152,7 @@ body_opt:
     }
 ;
 
+/* ---------- ASSERT SECTION ---------- */
 assert_section:
     ASSERT LBRACE assert_list RBRACE
 ;
@@ -112,6 +173,7 @@ assert:
         fprintf(out, "        // assert body.%s contains %s\n", $3, $5);
     }
 ;
+
 %%
 
 int main(int argc, char **argv) {
@@ -132,7 +194,6 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // write Java class header
     fprintf(out, "import org.junit.jupiter.api.*;\n");
     fprintf(out, "import java.net.http.*;\n");
     fprintf(out, "import java.net.URI;\n");

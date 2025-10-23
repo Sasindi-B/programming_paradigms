@@ -1,4 +1,14 @@
-<program> ::= <test_list>
+
+<program> ::= <config_opt> <var_list_opt> <test_list>
+
+<config_opt> ::= <config_block> | ε
+
+<config_block> ::= "config" "{" <config_body> "}"
+
+<config_body> ::= <config_item> | <config_body> <config_item>
+
+<config_item> ::= "base_url" "=" <string> ";"
+                | "header" <string> "=" <string> ";"
 
 <test_list> ::= <test> | <test_list> <test>
 
@@ -25,3 +35,11 @@
            | "body" "." <json_path> "contains" <string>
 
 <http_method> ::= "GET" | "POST" | "PUT" | "DELETE"
+
+<var_list_opt> ::= <var_list> | ε
+
+<var_list> ::= <var_decl> | <var_list> <var_decl>
+
+<var_decl> ::= "let" <identifier> "=" <value> ";"
+
+<value> ::= <string> | <number>

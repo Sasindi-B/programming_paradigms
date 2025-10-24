@@ -11,7 +11,8 @@ LEX_SRC = testlang.l
 YACC_SRC = testlang.y
 TARGET = testlang_compiler
 JAVA_SRC = Samples/src/*.java
-INPUT = sample.test
+# Default input .test script (override with `make run INPUT=...`)
+INPUT ?= Samples/sample.test
 
 # Default rule
 all: $(TARGET) java

@@ -12,4 +12,4 @@ gcc lex.yy.c testlang.tab.c -o testlang_compiler
 echo "Compiling Java support files..."
 javac Samples/src/*.java
 
-echo "✅ Build complete."
+echo "Build complete."

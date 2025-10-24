@@ -16,3 +16,18 @@ TEST getUser {
     status == 200
   }
 }
+
+TEST createUser {
+  REQUEST {
+    METHOD: POST
+    URL: "/api/post"
+    BODY: "{\"hello\":\"world\",\"n\":123}"
+  }
+  ASSERT {
+    status == 201
+    body.message == "POST ok"
+    body.received contains "programming"
+    body.received contains "paradigms"
+    body.received contains "assignments"
+  }
+}

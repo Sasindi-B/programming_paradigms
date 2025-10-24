@@ -4,7 +4,7 @@ import java.net.http.*;
 
 public class HttpUtil {
 
-    public static void sendGet(String url) throws IOException, InterruptedException {
+    public static HttpResponse<String> sendGet(String url) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -12,10 +12,12 @@ public class HttpUtil {
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("GET " + url + " → " + response.statusCode());
+        System.out.println("GET " + url + " -> " + response.statusCode());
+        System.out.println(response.body());
+        return response;
     }
 
-    public static void sendPost(String url, String json) throws IOException, InterruptedException {
+    public static HttpResponse<String> sendPost(String url, String json) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -24,6 +26,9 @@ public class HttpUtil {
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("POST " + url + " → " + response.statusCode());
+        System.out.println("POST " + url + " -> " + response.statusCode());
+        System.out.println(response.body());
+        return response;
     }
 }
+

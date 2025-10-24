@@ -72,6 +72,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 extern int yylex();
 extern FILE *yyin;
@@ -81,8 +82,82 @@ FILE *out;
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
 }
+/* Buffer for deferred assertions emitted in assert_section */
+static char assert_buffer[65536];
+static void asserts_reset() { assert_buffer[0] = '\0'; }
+static void asserts_append(const char* s) {
+    size_t cur = strlen(assert_buffer);
+    size_t add = strlen(s);
+    if (cur + add + 1 < sizeof(assert_buffer)) {
+        memcpy(assert_buffer + cur, s, add + 1);
+    }
+}
+/* Buffer for default headers from config */
+static char default_headers[8192];
+static void headers_append(const char* s) {
+    size_t cur = strlen(default_headers);
+    size_t add = strlen(s);
+    if (cur + add + 1 < sizeof(default_headers)) {
+        memcpy(default_headers + cur, s, add + 1);
+    }
+}
 
-#line 86 "testlang.tab.c"
+/* Build a Java expression for URL from a DSL string that may include $vars.
+   If the path is relative (starts with '/'), prefix with BASE_URL. */
+static char* build_url_expr_from_string(const char* yylval_str) {
+    const char* s = yylval_str;
+    size_t len = strlen(s);
+    const char* p = s;
+    const char* end = s + len;
+    if (len >= 2 && s[0] == '"' && s[len-1] == '"') {
+        p = s + 1;
+        end = s + len - 1;
+    }
+    char buf[4096];
+    size_t pos = 0;
+    int is_abs = ((end - p) >= 4 && strncmp(p, "http", 4) == 0);
+    if (!is_abs) {
+        pos += snprintf(buf + pos, sizeof(buf) - pos, "BASE_URL + ");
+    }
+    int in_quote = 0;
+    pos += snprintf(buf + pos, sizeof(buf) - pos, "\"");
+    in_quote = 1;
+    while (p < end && pos < sizeof(buf) - 1) {
+        if (*p == '$') {
+            if (in_quote) {
+                pos += snprintf(buf + pos, sizeof(buf) - pos, "\" + ");
+                in_quote = 0;
+            }
+            p++;
+            const char* start = p;
+            while (p < end && (isalnum((unsigned char)*p) || *p == '_')) p++;
+            size_t n = (size_t)(p - start);
+            char var[128];
+            if (n > sizeof(var) - 1) n = sizeof(var) - 1;
+            memcpy(var, start, n);
+            var[n] = '\0';
+            pos += snprintf(buf + pos, sizeof(buf) - pos, "%s + ", var);
+            pos += snprintf(buf + pos, sizeof(buf) - pos, "\"");
+            in_quote = 1;
+            continue;
+        }
+        if (*p == '\\' || *p == '"') {
+            pos += snprintf(buf + pos, sizeof(buf) - pos, "\\%c", *p);
+        } else {
+            pos += snprintf(buf + pos, sizeof(buf) - pos, "%c", *p);
+        }
+        p++;
+    }
+    if (in_quote) {
+        pos += snprintf(buf + pos, sizeof(buf) - pos, "\"");
+    }
+    char* out = (char*)malloc(pos + 1);
+    memcpy(out, buf, pos);
+    out[pos] = '\0';
+    return out;
+}
+
+#line 161 "testlang.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -137,30 +212,29 @@ enum yysymbol_kind_t
   YYSYMBOL_RBRACE = 24,                    /* RBRACE  */
   YYSYMBOL_COLON = 25,                     /* COLON  */
   YYSYMBOL_DOT = 26,                       /* DOT  */
-  YYSYMBOL_27_status_ = 27,                /* "status"  */
-  YYSYMBOL_28_body_ = 28,                  /* "body"  */
-  YYSYMBOL_YYACCEPT = 29,                  /* $accept  */
-  YYSYMBOL_program = 30,                   /* program  */
-  YYSYMBOL_config_opt = 31,                /* config_opt  */
-  YYSYMBOL_config_body = 32,               /* config_body  */
-  YYSYMBOL_config_item = 33,               /* config_item  */
-  YYSYMBOL_var_list_opt = 34,              /* var_list_opt  */
-  YYSYMBOL_var_list = 35,                  /* var_list  */
-  YYSYMBOL_var_decl = 36,                  /* var_decl  */
-  YYSYMBOL_value = 37,                     /* value  */
-  YYSYMBOL_test_list = 38,                 /* test_list  */
-  YYSYMBOL_test = 39,                      /* test  */
-  YYSYMBOL_test_body = 40,                 /* test_body  */
-  YYSYMBOL_request_section = 41,           /* request_section  */
-  YYSYMBOL_method_decl = 42,               /* method_decl  */
-  YYSYMBOL_url_decl = 43,                  /* url_decl  */
-  YYSYMBOL_headers_opt = 44,               /* headers_opt  */
-  YYSYMBOL_header_list = 45,               /* header_list  */
-  YYSYMBOL_header = 46,                    /* header  */
-  YYSYMBOL_body_opt = 47,                  /* body_opt  */
-  YYSYMBOL_assert_section = 48,            /* assert_section  */
-  YYSYMBOL_assert_list = 49,               /* assert_list  */
-  YYSYMBOL_assert = 50                     /* assert  */
+  YYSYMBOL_YYACCEPT = 27,                  /* $accept  */
+  YYSYMBOL_program = 28,                   /* program  */
+  YYSYMBOL_config_opt = 29,                /* config_opt  */
+  YYSYMBOL_config_body = 30,               /* config_body  */
+  YYSYMBOL_config_item = 31,               /* config_item  */
+  YYSYMBOL_var_list_opt = 32,              /* var_list_opt  */
+  YYSYMBOL_var_list = 33,                  /* var_list  */
+  YYSYMBOL_var_decl = 34,                  /* var_decl  */
+  YYSYMBOL_value = 35,                     /* value  */
+  YYSYMBOL_test_list = 36,                 /* test_list  */
+  YYSYMBOL_test = 37,                      /* test  */
+  YYSYMBOL_38_1 = 38,                      /* $@1  */
+  YYSYMBOL_test_body = 39,                 /* test_body  */
+  YYSYMBOL_request_section = 40,           /* request_section  */
+  YYSYMBOL_method_decl = 41,               /* method_decl  */
+  YYSYMBOL_url_decl = 42,                  /* url_decl  */
+  YYSYMBOL_headers_opt = 43,               /* headers_opt  */
+  YYSYMBOL_header_list = 44,               /* header_list  */
+  YYSYMBOL_header = 45,                    /* header  */
+  YYSYMBOL_body_opt = 46,                  /* body_opt  */
+  YYSYMBOL_assert_section = 47,            /* assert_section  */
+  YYSYMBOL_assert_list = 48,               /* assert_list  */
+  YYSYMBOL_assert = 49                     /* assert  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -488,19 +562,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  5
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   92
+#define YYLAST   88
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  29
+#define YYNTOKENS  27
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  22
+#define YYNNTS  23
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  36
+#define YYNRULES  37
 /* YYNSTATES -- Number of states.  */
 #define YYNSTATES  82
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   283
+#define YYMAXUTOK   281
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -542,17 +616,17 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
       15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    26,    27,    28
+      25,    26
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_int16 yyrline[] =
 {
-       0,    37,    37,    41,    43,    47,    48,    52,    55,    61,
-      63,    67,    68,    72,    78,    79,    88,    89,    93,   108,
-     113,   117,   123,   126,   131,   133,   137,   138,   142,   148,
-     150,   157,   161,   162,   166,   169,   172
+       0,   112,   112,   116,   118,   122,   123,   127,   130,   138,
+     140,   144,   145,   149,   155,   156,   165,   166,   170,   170,
+     199,   204,   208,   214,   219,   224,   226,   230,   231,   235,
+     241,   243,   250,   254,   255,   259,   267,   278
 };
 #endif
 
@@ -572,9 +646,9 @@ static const char *const yytname[] =
   "ASSERT", "METHOD", "URL", "HEADERS", "BODY", "STRING", "IDENTIFIER",
   "HTTP_METHOD", "VARREF", "NUMBER", "EQ", "CONTAINS", "ASSIGN",
   "SEMICOLON", "CONFIG", "BASE_URL", "HEADER", "LET", "LBRACE", "RBRACE",
-  "COLON", "DOT", "\"status\"", "\"body\"", "$accept", "program",
-  "config_opt", "config_body", "config_item", "var_list_opt", "var_list",
-  "var_decl", "value", "test_list", "test", "test_body", "request_section",
+  "COLON", "DOT", "$accept", "program", "config_opt", "config_body",
+  "config_item", "var_list_opt", "var_list", "var_decl", "value",
+  "test_list", "test", "$@1", "test_body", "request_section",
   "method_decl", "url_decl", "headers_opt", "header_list", "header",
   "body_opt", "assert_section", "assert_list", "assert", YY_NULLPTR
 };
@@ -586,7 +660,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-27)
+#define YYPACT_NINF (-18)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -600,15 +674,15 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-       0,    -3,    13,     1,    -5,   -27,    10,    19,     1,   -27,
-       7,    15,   -19,   -27,     9,    16,    19,   -27,   -27,    18,
-      12,   -27,   -27,    -6,     8,   -27,    14,    20,   -27,   -27,
-      17,    29,   -27,    21,   -27,    11,    22,    31,   -27,    32,
-     -27,    24,   -27,    23,    30,   -17,    28,    25,    33,    27,
-      26,   -21,   -27,   -27,    -1,    34,    35,    37,    38,   -27,
-     -27,   -27,   -27,    43,    36,    39,   -27,     2,    40,   -10,
-     -27,    44,   -27,    45,    46,    48,   -27,   -27,   -27,   -27,
-     -27,   -27
+     -13,    -3,    10,    -1,    -4,   -18,     2,    19,    -1,   -18,
+       6,    14,   -17,   -18,     8,    15,    19,   -18,   -18,    17,
+      11,   -18,   -18,    -5,     7,   -18,    13,    22,   -18,   -18,
+      16,   -18,   -18,    18,   -18,    25,   -18,    12,     9,    32,
+      33,   -18,    20,   -18,    21,    31,    29,    30,    23,    36,
+     -14,    -9,   -18,   -18,    -2,    24,    40,    27,    34,   -18,
+     -18,   -18,   -18,    41,    28,    26,   -18,     3,    35,   -10,
+     -18,    42,   -18,    44,    45,    46,   -18,   -18,   -18,   -18,
+     -18,   -18
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -619,28 +693,28 @@ static const yytype_int8 yydefact[] =
        3,     0,     0,     9,     0,     1,     0,     0,    10,    11,
        0,     0,     0,     5,     0,     0,     2,    16,    12,     0,
        0,     4,     6,     0,     0,    17,     0,     0,    14,    15,
-       0,     0,     7,     0,    13,     0,     0,     0,     8,     0,
-      18,     0,    19,     0,     0,     0,     0,     0,    24,     0,
-       0,     0,    32,    21,     0,     0,    29,     0,     0,    31,
-      33,    22,    23,     0,     0,     0,    34,     0,     0,     0,
-      26,     0,    20,     0,     0,     0,    25,    27,    30,    35,
-      36,    28
+       0,    18,     7,     0,    13,     0,     8,     0,     0,     0,
+       0,    19,     0,    20,     0,     0,     0,     0,     0,    25,
+       0,     0,    33,    22,     0,     0,    30,     0,     0,    32,
+      34,    23,    24,     0,     0,     0,    35,     0,     0,     0,
+      27,     0,    21,     0,     0,     0,    26,    28,    31,    36,
+      37,    29
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -27,   -27,   -27,   -27,    47,   -27,   -27,    52,   -27,   -27,
-      50,   -27,   -27,   -27,   -27,   -27,   -27,   -26,   -27,   -27,
-     -27,    41
+     -18,   -18,   -18,   -18,    47,   -18,   -18,    49,   -18,   -18,
+      48,   -18,   -18,   -18,   -18,   -18,   -18,   -18,   -11,   -18,
+     -18,   -18,    37
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
        0,     2,     3,    12,    13,     7,     8,     9,    30,    16,
-      17,    36,    37,    44,    48,    56,    69,    70,    65,    42,
-      51,    52
+      17,    35,    38,    39,    45,    49,    56,    69,    70,    65,
+      43,    51,    52
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -648,63 +722,61 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      68,    10,    11,    59,    28,    21,    49,    50,    29,    61,
-      49,    50,    62,     5,    76,    10,    11,    73,    74,     1,
-       4,    14,    15,     6,    19,    20,    23,    24,    26,    27,
-      33,    31,    32,    35,    39,    34,    41,    47,    43,    38,
-      53,    55,    57,    77,    64,     0,    40,    45,    46,    67,
-      54,    66,    58,    68,    78,    79,    80,    63,    81,    22,
-      18,    71,     0,    72,     0,    75,    25,     0,     0,     0,
+      68,    57,    50,    10,    11,    28,     1,    21,    61,    29,
+       5,    62,    58,    14,    76,    59,    10,    11,    73,    74,
+       4,     6,    15,    19,    20,    23,    24,    26,    27,    37,
+      31,    32,    33,    41,    34,    40,    36,    42,    48,    44,
+      50,    66,    53,    46,    55,    67,    47,    63,    54,    64,
+      72,    68,    78,    71,    79,    80,    81,    18,    77,    22,
+      75,     0,     0,     0,    25,     0,     0,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-       0,     0,    60
+       0,     0,     0,     0,     0,     0,     0,     0,    60
 };
 
 static const yytype_int8 yycheck[] =
 {
-      10,    20,    21,    24,    10,    24,    27,    28,    14,    10,
-      27,    28,    13,     0,    24,    20,    21,    15,    16,    19,
-      23,    11,     3,    22,    17,    10,    17,    11,    10,    17,
-      10,    23,    18,     4,    23,    18,     5,     7,     6,    18,
-      12,     8,    15,    69,     9,    -1,    24,    23,    25,    11,
-      25,    14,    26,    10,    10,    10,    10,    23,    10,    12,
-       8,    25,    -1,    24,    -1,    25,    16,    -1,    -1,    -1,
+      10,    15,    11,    20,    21,    10,    19,    24,    10,    14,
+       0,    13,    26,    11,    24,    24,    20,    21,    15,    16,
+      23,    22,     3,    17,    10,    17,    11,    10,    17,     4,
+      23,    18,    10,    24,    18,    23,    18,     5,     7,     6,
+      11,    14,    12,    23,     8,    11,    25,    23,    25,     9,
+      24,    10,    10,    25,    10,    10,    10,     8,    69,    12,
+      25,    -1,    -1,    -1,    16,    -1,    -1,    -1,    -1,    -1,
       -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
-      -1,    -1,    51
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    51
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    19,    30,    31,    23,     0,    22,    34,    35,    36,
-      20,    21,    32,    33,    11,     3,    38,    39,    36,    17,
-      10,    24,    33,    17,    11,    39,    10,    17,    10,    14,
-      37,    23,    18,    10,    18,     4,    40,    41,    18,    23,
-      24,     5,    48,     6,    42,    23,    25,     7,    43,    27,
-      28,    49,    50,    12,    25,     8,    44,    15,    26,    24,
-      50,    10,    13,    23,     9,    47,    14,    11,    10,    45,
-      46,    25,    24,    15,    16,    25,    24,    46,    10,    10,
+       0,    19,    28,    29,    23,     0,    22,    32,    33,    34,
+      20,    21,    30,    31,    11,     3,    36,    37,    34,    17,
+      10,    24,    31,    17,    11,    37,    10,    17,    10,    14,
+      35,    23,    18,    10,    18,    38,    18,     4,    39,    40,
+      23,    24,     5,    47,     6,    41,    23,    25,     7,    42,
+      11,    48,    49,    12,    25,     8,    43,    15,    26,    24,
+      49,    10,    13,    23,     9,    46,    14,    11,    10,    44,
+      45,    25,    24,    15,    16,    25,    24,    45,    10,    10,
       10,    10
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    29,    30,    31,    31,    32,    32,    33,    33,    34,
-      34,    35,    35,    36,    37,    37,    38,    38,    39,    40,
-      41,    42,    43,    43,    44,    44,    45,    45,    46,    47,
-      47,    48,    49,    49,    50,    50,    50
+       0,    27,    28,    29,    29,    30,    30,    31,    31,    32,
+      32,    33,    33,    34,    35,    35,    36,    36,    38,    37,
+      39,    40,    41,    42,    42,    43,    43,    44,    44,    45,
+      46,    46,    47,    48,    48,    49,    49,    49
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
        0,     2,     3,     0,     4,     1,     2,     4,     5,     0,
-       1,     1,     2,     5,     1,     1,     1,     2,     5,     2,
-       7,     3,     3,     3,     0,     4,     1,     2,     3,     0,
-       3,     4,     1,     2,     3,     5,     5
+       1,     1,     2,     5,     1,     1,     1,     2,     0,     6,
+       2,     7,     3,     3,     3,     0,     4,     1,     2,     3,
+       0,     3,     4,     1,     2,     3,     5,     5
 };
 
 
@@ -1168,134 +1240,183 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: config_opt var_list_opt test_list  */
-#line 37 "testlang.y"
+#line 112 "testlang.y"
                                       { fprintf(out, "}\n"); }
-#line 1174 "testlang.tab.c"
+#line 1246 "testlang.tab.c"
     break;
 
   case 7: /* config_item: BASE_URL ASSIGN STRING SEMICOLON  */
-#line 52 "testlang.y"
+#line 127 "testlang.y"
                                      {
         fprintf(out, "    private static final String BASE_URL = %s;\n", (yyvsp[-1].str));
     }
-#line 1182 "testlang.tab.c"
+#line 1254 "testlang.tab.c"
     break;
 
   case 8: /* config_item: HEADER STRING ASSIGN STRING SEMICOLON  */
-#line 55 "testlang.y"
+#line 130 "testlang.y"
                                           {
-        fprintf(out, "    // default header %s = %s\n", (yyvsp[-3].str), (yyvsp[-1].str));
+        char hbuf[512];
+        snprintf(hbuf, sizeof(hbuf), "        builder.header(%s, %s);\n", (yyvsp[-3].str), (yyvsp[-1].str));
+        headers_append(hbuf);
     }
-#line 1190 "testlang.tab.c"
+#line 1264 "testlang.tab.c"
     break;
 
   case 13: /* var_decl: LET IDENTIFIER ASSIGN value SEMICOLON  */
-#line 72 "testlang.y"
-                                          {
-        fprintf(out, "    private static final String %s = %s;\n", (yyvsp[-3].str), (yyvsp[-1].str));
+#line 149 "testlang.y"
+                                          {
+        fprintf(out, "    private static final String %s = %s;\n", (yyvsp[-3].str), (yyvsp[-1].str));
     }
-#line 1198 "testlang.tab.c"
+#line 1272 "testlang.tab.c"
     break;
 
   case 14: /* value: STRING  */
-#line 78 "testlang.y"
+#line 155 "testlang.y"
            { (yyval.str) = (yyvsp[0].str); }
-#line 1204 "testlang.tab.c"
+#line 1278 "testlang.tab.c"
     break;
 
   case 15: /* value: NUMBER  */
-#line 79 "testlang.y"
-           {
-        char buf[32];
-        sprintf(buf, "\"%d\"", (yyvsp[0].num));
-        (yyval.str) = strdup(buf);
+#line 156 "testlang.y"
+           {
+        char buf[32];
+        sprintf(buf, "\"%d\"", (yyvsp[0].num));
+        (yyval.str) = strdup(buf);
     }
-#line 1214 "testlang.tab.c"
+#line 1288 "testlang.tab.c"
     break;
 
-  case 18: /* test: TEST IDENTIFIER LBRACE test_body RBRACE  */
-#line 93 "testlang.y"
-                                            {
+  case 18: /* $@1: %empty  */
+#line 170 "testlang.y"
+                           {
         fprintf(out, "\n    @Test\n");
-        fprintf(out, "    public void %s() throws Exception {\n", (yyvsp[-3].str));
-        fprintf(out, "        HttpRequest request = HttpRequest.newBuilder()\n");
-        fprintf(out, "            .uri(URI.create(url))\n");
-        fprintf(out, "            .method(method, bodyPublisher)\n");
-        fprintf(out, "            .headers(headersArray)\n");
-        fprintf(out, "            .build();\n");
+        fprintf(out, "    public void %s() throws Exception {\n", (yyvsp[-1].str));
+        fprintf(out, "        String method = null;\n");
+        fprintf(out, "        String url = null;\n");
+        fprintf(out, "        String body = null;\n");
+        fprintf(out, "        int expectedStatus = 200;\n");
+        fprintf(out, "        HttpRequest.Builder builder = HttpRequest.newBuilder();\n");
+        fprintf(out, "%s", default_headers);
+        asserts_reset();
+    }
+#line 1304 "testlang.tab.c"
+    break;
+
+  case 19: /* test: TEST IDENTIFIER LBRACE $@1 test_body RBRACE  */
+#line 180 "testlang.y"
+                       {
+        fprintf(out, "        if (url != null) builder.uri(URI.create(url));\n");
+        fprintf(out, "        if (\"GET\".equalsIgnoreCase(method)) {\n");
+        fprintf(out, "            builder = builder.GET();\n");
+        fprintf(out, "        } else if (body != null) {\n");
+        fprintf(out, "            builder = builder.method(method, HttpRequest.BodyPublishers.ofString(body));\n");
+        fprintf(out, "        } else {\n");
+        fprintf(out, "            builder = builder.method(method, HttpRequest.BodyPublishers.noBody());\n");
+        fprintf(out, "        }\n");
+        fprintf(out, "        HttpRequest request = builder.build();\n");
         fprintf(out, "        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());\n");
         fprintf(out, "        Assertions.assertEquals(expectedStatus, response.statusCode());\n");
+        fprintf(out, "        String bodyStr = response.body();\n");
+        fprintf(out, "%s", assert_buffer);
         fprintf(out, "    }\n");
     }
-#line 1231 "testlang.tab.c"
+#line 1325 "testlang.tab.c"
     break;
 
-  case 21: /* method_decl: METHOD COLON HTTP_METHOD  */
-#line 117 "testlang.y"
+  case 22: /* method_decl: METHOD COLON HTTP_METHOD  */
+#line 208 "testlang.y"
                              {
-        fprintf(out, "        String method = \"%s\";\n", (yyvsp[0].str));
+        fprintf(out, "        method = \"%s\";\n", (yyvsp[0].str));
     }
-#line 1239 "testlang.tab.c"
+#line 1333 "testlang.tab.c"
     break;
 
-  case 22: /* url_decl: URL COLON STRING  */
-#line 123 "testlang.y"
+  case 23: /* url_decl: URL COLON STRING  */
+#line 214 "testlang.y"
                      {
-        fprintf(out, "        String url = %s;\n", (yyvsp[0].str));
+        char* expr = build_url_expr_from_string((yyvsp[0].str));
+        fprintf(out, "        url = %s;\n", expr);
+        free(expr);
     }
-#line 1247 "testlang.tab.c"
+#line 1343 "testlang.tab.c"
     break;
 
-  case 23: /* url_decl: URL COLON VARREF  */
-#line 126 "testlang.y"
+  case 24: /* url_decl: URL COLON VARREF  */
+#line 219 "testlang.y"
                      {
-        fprintf(out, "        String url = %s;\n", (yyvsp[0].str));
+        fprintf(out, "        url = %s;\n", (yyvsp[0].str));
     }
-#line 1255 "testlang.tab.c"
+#line 1351 "testlang.tab.c"
     break;
 
-  case 28: /* header: STRING COLON STRING  */
-#line 142 "testlang.y"
+  case 29: /* header: STRING COLON STRING  */
+#line 235 "testlang.y"
                         {
-        fprintf(out, "        // header %s: %s\n", (yyvsp[-2].str), (yyvsp[0].str));
+        fprintf(out, "        builder.header(%s, %s);\n", (yyvsp[-2].str), (yyvsp[0].str));
     }
-#line 1263 "testlang.tab.c"
+#line 1359 "testlang.tab.c"
     break;
 
-  case 30: /* body_opt: BODY COLON STRING  */
-#line 150 "testlang.y"
+  case 31: /* body_opt: BODY COLON STRING  */
+#line 243 "testlang.y"
                       {
-        fprintf(out, "        String body = %s;\n", (yyvsp[0].str));
+        fprintf(out, "        body = %s;\n", (yyvsp[0].str));
     }
-#line 1271 "testlang.tab.c"
+#line 1367 "testlang.tab.c"
     break;
 
-  case 34: /* assert: "status" EQ NUMBER  */
-#line 166 "testlang.y"
-                       {
-        fprintf(out, "        int expectedStatus = %d;\n", (yyvsp[0].num));
+  case 35: /* assert: IDENTIFIER EQ NUMBER  */
+#line 259 "testlang.y"
+                         {
+        if (strcmp((yyvsp[-2].str), "status") == 0) {
+            fprintf(out, "        expectedStatus = %d;\n", (yyvsp[0].num));
+        } else {
+            /* Unknown identifier in status position; emit comment */
+            fprintf(out, "        // unsupported assert: %s == %d\n", (yyvsp[-2].str), (yyvsp[0].num));
+        }
     }
-#line 1279 "testlang.tab.c"
+#line 1380 "testlang.tab.c"
     break;
 
-  case 35: /* assert: "body" DOT IDENTIFIER EQ STRING  */
-#line 169 "testlang.y"
-                                    {
-        fprintf(out, "        // assert body.%s == %s\n", (yyvsp[-2].str), (yyvsp[0].str));
+  case 36: /* assert: IDENTIFIER DOT IDENTIFIER EQ STRING  */
+#line 267 "testlang.y"
+                                        {
+        if (strcmp((yyvsp[-4].str), "body") == 0) {
+            char buf[512];
+            snprintf(buf, sizeof(buf),
+                     "        Assertions.assertTrue(bodyStr.contains(\"\\\"%s\\\":%s\"), \"body.%s == %s\");\n",
+                     (yyvsp[-2].str), (yyvsp[0].str), (yyvsp[-2].str), (yyvsp[0].str));
+            asserts_append(buf);
+        } else {
+            fprintf(out, "        // unsupported assert scope: %s.%s == %s\n", (yyvsp[-4].str), (yyvsp[-2].str), (yyvsp[0].str));
+        }
     }
-#line 1287 "testlang.tab.c"
+#line 1396 "testlang.tab.c"
     break;
 
-  case 36: /* assert: "body" DOT IDENTIFIER CONTAINS STRING  */
-#line 172 "testlang.y"
-                                          {
-        fprintf(out, "        // assert body.%s contains %s\n", (yyvsp[-2].str), (yyvsp[0].str));
+  case 37: /* assert: IDENTIFIER DOT IDENTIFIER CONTAINS STRING  */
+#line 278 "testlang.y"
+                                              {
+        if (strcmp((yyvsp[-4].str), "body") == 0) {
+            char buf[512];
+            snprintf(buf, sizeof(buf),
+                     "        Assertions.assertTrue(bodyStr.contains(\"\\\"%s\\\"\"), \"body has field %s\");\n",
+                     (yyvsp[-2].str), (yyvsp[-2].str));
+            asserts_append(buf);
+            snprintf(buf, sizeof(buf),
+                     "        Assertions.assertTrue(bodyStr.contains(%s), \"body.%s contains %s\");\n",
+                     (yyvsp[0].str), (yyvsp[-2].str), (yyvsp[0].str));
+            asserts_append(buf);
+        } else {
+            fprintf(out, "        // unsupported assert scope: %s.%s contains %s\n", (yyvsp[-4].str), (yyvsp[-2].str), (yyvsp[0].str));
+        }
     }
-#line 1295 "testlang.tab.c"
+#line 1416 "testlang.tab.c"
     break;
 
 
-#line 1299 "testlang.tab.c"
+#line 1420 "testlang.tab.c"
 
       default: break;
     }
@@ -1488,39 +1609,40 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 177 "testlang.y"
-
-
-int main(int argc, char **argv) {
-    if (argc < 2) {
-        printf("Usage: %s <filename.test>\n", argv[0]);
-        return 1;
-    }
-
-    FILE *file = fopen(argv[1], "r");
-    if (!file) {
-        perror("File not found");
-        return 1;
-    }
-
-    out = fopen("GeneratedTests.java", "w");
-    if (!out) {
-        perror("Cannot open output file");
-        return 1;
-    }
-
-    fprintf(out, "import org.junit.jupiter.api.*;\n");
-    fprintf(out, "import java.net.http.*;\n");
-    fprintf(out, "import java.net.URI;\n");
-    fprintf(out, "\npublic class GeneratedTests {\n");
-    fprintf(out, "    private static final HttpClient client = HttpClient.newHttpClient();\n");
-
-    yyin = file;
-    printf("Parsing %s...\n", argv[1]);
-    yyparse();
-    printf("✅ Parsing complete. Generated: GeneratedTests.java\n");
+#line 295 "testlang.y"
+
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        printf("Usage: %s <filename.test>\n", argv[0]);
+        return 1;
+    }
+
+    FILE *file = fopen(argv[1], "r");
+    if (!file) {
+        perror("File not found");
+        return 1;
+    }
+
+    out = fopen("Samples/src/GeneratedTests.java", "w");
+    if (!out) {
+        perror("Cannot open output file");
+        return 1;
+    }
+
+    fprintf(out, "import org.junit.jupiter.api.*;\n");
+    fprintf(out, "import java.net.http.*;\n");
+    fprintf(out, "import java.net.URI;\n");
+    fprintf(out, "\npublic class GeneratedTests {\n");
+    fprintf(out, "    private static final HttpClient client = HttpClient.newHttpClient();\n");
+
+    yyin = file;
+    printf("Parsing %s...\n", argv[1]);
+    yyparse();
+    printf("Parsing complete. Generated: Samples/src/GeneratedTests.java\n");
 
     fclose(file);
     fclose(out);
     return 0;
 }
+

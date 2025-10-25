@@ -82,6 +82,39 @@ FILE *out;
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
 }
+/* Escape a DSL string (including quotes) so it can be safely embedded
+   inside a Java string literal. Escapes backslashes and double quotes. */
+static char* escape_java_literal(const char* s) {
+    size_t len = strlen(s);
+    /* Worst case every char needs a backslash prefix */
+    char* buf = (char*)malloc(len * 2 + 1);
+    size_t j = 0;
+    for (size_t i = 0; i < len; i++) {
+        char c = s[i];
+        if (c == '"' || c == '\\') {
+            buf[j++] = '\\';
+        }
+        buf[j++] = c;
+    }
+    buf[j] = '\0';
+    return buf;
+}
+/* Return a newly allocated copy of s with a single pair of leading/trailing
+   double quotes removed if present. */
+static char* strip_outer_quotes(const char* s) {
+    size_t len = strlen(s);
+    if (len >= 2 && s[0] == '"' && s[len - 1] == '"') {
+        size_t n = len - 2;
+        char* out = (char*)malloc(n + 1);
+        memcpy(out, s + 1, n);
+        out[n] = '\0';
+        return out;
+    }
+    /* No surrounding quotes; return a duplicate */
+    char* out = (char*)malloc(len + 1);
+    memcpy(out, s, len + 1);
+    return out;
+}
 /* Buffer for deferred assertions emitted in assert_section */
 static char assert_buffer[65536];
 static void asserts_reset() { assert_buffer[0] = '\0'; }
@@ -157,7 +190,7 @@ static char* build_url_expr_from_string(const char* yylval_str) {
     return out;
 }
 
-#line 161 "testlang.tab.c"
+#line 194 "testlang.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -623,10 +656,10 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,   112,   112,   116,   118,   122,   123,   127,   130,   138,
-     140,   144,   145,   149,   155,   156,   165,   166,   170,   170,
-     199,   204,   208,   214,   219,   224,   226,   230,   231,   235,
-     241,   243,   250,   254,   255,   259,   267,   278
+       0,   145,   145,   149,   151,   155,   156,   160,   163,   171,
+     173,   177,   178,   182,   188,   189,   198,   199,   203,   203,
+     232,   237,   241,   247,   252,   257,   259,   263,   264,   268,
+     274,   276,   283,   287,   288,   292,   300,   318
 };
 #endif
 
@@ -1240,55 +1273,55 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: config_opt var_list_opt test_list  */
-#line 112 "testlang.y"
+#line 145 "testlang.y"
                                       { fprintf(out, "}\n"); }
-#line 1246 "testlang.tab.c"
+#line 1279 "testlang.tab.c"
     break;
 
   case 7: /* config_item: BASE_URL ASSIGN STRING SEMICOLON  */
-#line 127 "testlang.y"
+#line 160 "testlang.y"
                                      {
         fprintf(out, "    private static final String BASE_URL = %s;\n", (yyvsp[-1].str));
     }
-#line 1254 "testlang.tab.c"
+#line 1287 "testlang.tab.c"
     break;
 
   case 8: /* config_item: HEADER STRING ASSIGN STRING SEMICOLON  */
-#line 130 "testlang.y"
+#line 163 "testlang.y"
                                           {
         char hbuf[512];
         snprintf(hbuf, sizeof(hbuf), "        builder.header(%s, %s);\n", (yyvsp[-3].str), (yyvsp[-1].str));
         headers_append(hbuf);
     }
-#line 1264 "testlang.tab.c"
+#line 1297 "testlang.tab.c"
     break;
 
   case 13: /* var_decl: LET IDENTIFIER ASSIGN value SEMICOLON  */
-#line 149 "testlang.y"
+#line 182 "testlang.y"
                                           {
         fprintf(out, "    private static final String %s = %s;\n", (yyvsp[-3].str), (yyvsp[-1].str));
     }
-#line 1272 "testlang.tab.c"
+#line 1305 "testlang.tab.c"
     break;
 
   case 14: /* value: STRING  */
-#line 155 "testlang.y"
+#line 188 "testlang.y"
            { (yyval.str) = (yyvsp[0].str); }
-#line 1278 "testlang.tab.c"
+#line 1311 "testlang.tab.c"
     break;
 
   case 15: /* value: NUMBER  */
-#line 156 "testlang.y"
+#line 189 "testlang.y"
            {
         char buf[32];
         sprintf(buf, "\"%d\"", (yyvsp[0].num));
         (yyval.str) = strdup(buf);
     }
-#line 1288 "testlang.tab.c"
+#line 1321 "testlang.tab.c"
     break;
 
   case 18: /* $@1: %empty  */
-#line 170 "testlang.y"
+#line 203 "testlang.y"
                            {
         fprintf(out, "\n    @Test\n");
         fprintf(out, "    public void %s() throws Exception {\n", (yyvsp[-1].str));
@@ -1300,11 +1333,11 @@ yyreduce:
         fprintf(out, "%s", default_headers);
         asserts_reset();
     }
-#line 1304 "testlang.tab.c"
+#line 1337 "testlang.tab.c"
     break;
 
   case 19: /* test: TEST IDENTIFIER LBRACE $@1 test_body RBRACE  */
-#line 180 "testlang.y"
+#line 213 "testlang.y"
                        {
         fprintf(out, "        if (url != null) builder.uri(URI.create(url));\n");
         fprintf(out, "        if (\"GET\".equalsIgnoreCase(method)) {\n");
@@ -1321,53 +1354,53 @@ yyreduce:
         fprintf(out, "%s", assert_buffer);
         fprintf(out, "    }\n");
     }
-#line 1325 "testlang.tab.c"
+#line 1358 "testlang.tab.c"
     break;
 
   case 22: /* method_decl: METHOD COLON HTTP_METHOD  */
-#line 208 "testlang.y"
+#line 241 "testlang.y"
                              {
         fprintf(out, "        method = \"%s\";\n", (yyvsp[0].str));
     }
-#line 1333 "testlang.tab.c"
+#line 1366 "testlang.tab.c"
     break;
 
   case 23: /* url_decl: URL COLON STRING  */
-#line 214 "testlang.y"
+#line 247 "testlang.y"
                      {
         char* expr = build_url_expr_from_string((yyvsp[0].str));
         fprintf(out, "        url = %s;\n", expr);
         free(expr);
     }
-#line 1343 "testlang.tab.c"
+#line 1376 "testlang.tab.c"
     break;
 
   case 24: /* url_decl: URL COLON VARREF  */
-#line 219 "testlang.y"
+#line 252 "testlang.y"
                      {
         fprintf(out, "        url = %s;\n", (yyvsp[0].str));
     }
-#line 1351 "testlang.tab.c"
+#line 1384 "testlang.tab.c"
     break;
 
   case 29: /* header: STRING COLON STRING  */
-#line 235 "testlang.y"
+#line 268 "testlang.y"
                         {
         fprintf(out, "        builder.header(%s, %s);\n", (yyvsp[-2].str), (yyvsp[0].str));
     }
-#line 1359 "testlang.tab.c"
+#line 1392 "testlang.tab.c"
     break;
 
   case 31: /* body_opt: BODY COLON STRING  */
-#line 243 "testlang.y"
+#line 276 "testlang.y"
                       {
         fprintf(out, "        body = %s;\n", (yyvsp[0].str));
     }
-#line 1367 "testlang.tab.c"
+#line 1400 "testlang.tab.c"
     break;
 
   case 35: /* assert: IDENTIFIER EQ NUMBER  */
-#line 259 "testlang.y"
+#line 292 "testlang.y"
                          {
         if (strcmp((yyvsp[-2].str), "status") == 0) {
             fprintf(out, "        expectedStatus = %d;\n", (yyvsp[0].num));
@@ -1376,27 +1409,34 @@ yyreduce:
             fprintf(out, "        // unsupported assert: %s == %d\n", (yyvsp[-2].str), (yyvsp[0].num));
         }
     }
-#line 1380 "testlang.tab.c"
+#line 1413 "testlang.tab.c"
     break;
 
   case 36: /* assert: IDENTIFIER DOT IDENTIFIER EQ STRING  */
-#line 267 "testlang.y"
+#line 300 "testlang.y"
                                         {
         if (strcmp((yyvsp[-4].str), "body") == 0) {
             char buf[512];
+            char* esc = escape_java_literal((yyvsp[0].str));
+            /* For human-friendly message, show value without outer quotes */
+            char* msg_raw = strip_outer_quotes((yyvsp[0].str));
+            char* msg_esc = escape_java_literal(msg_raw);
             snprintf(buf, sizeof(buf),
-                     "        Assertions.assertTrue(bodyStr.contains(\"\\\"%s\\\":%s\"), \"body.%s == %s\");\n",
-                     (yyvsp[-2].str), (yyvsp[0].str), (yyvsp[-2].str), (yyvsp[0].str));
+                     "        Assertions.assertTrue(bodyStr.contains(\"\\\"%s\\\":%s\"), \"body.%s == '%s'\");\n",
+                     (yyvsp[-2].str), esc, (yyvsp[-2].str), msg_esc);
+            free(esc);
+            free(msg_esc);
+            free(msg_raw);
             asserts_append(buf);
         } else {
             fprintf(out, "        // unsupported assert scope: %s.%s == %s\n", (yyvsp[-4].str), (yyvsp[-2].str), (yyvsp[0].str));
         }
     }
-#line 1396 "testlang.tab.c"
+#line 1436 "testlang.tab.c"
     break;
 
   case 37: /* assert: IDENTIFIER DOT IDENTIFIER CONTAINS STRING  */
-#line 278 "testlang.y"
+#line 318 "testlang.y"
                                               {
         if (strcmp((yyvsp[-4].str), "body") == 0) {
             char buf[512];
@@ -1404,19 +1444,26 @@ yyreduce:
                      "        Assertions.assertTrue(bodyStr.contains(\"\\\"%s\\\"\"), \"body has field %s\");\n",
                      (yyvsp[-2].str), (yyvsp[-2].str));
             asserts_append(buf);
+            char* esc2 = escape_java_literal((yyvsp[0].str));
+            /* Prepare cleaner value for message by stripping outer quotes */
+            char* msg2_raw = strip_outer_quotes((yyvsp[0].str));
+            char* msg2_esc = escape_java_literal(msg2_raw);
             snprintf(buf, sizeof(buf),
-                     "        Assertions.assertTrue(bodyStr.contains(%s), \"body.%s contains %s\");\n",
-                     (yyvsp[0].str), (yyvsp[-2].str), (yyvsp[0].str));
+                     "        Assertions.assertTrue(bodyStr.contains(%s), \"body.%s contains '%s'\");\n",
+                     (yyvsp[0].str), (yyvsp[-2].str), msg2_esc);
             asserts_append(buf);
+            free(esc2);
+            free(msg2_esc);
+            free(msg2_raw);
         } else {
             fprintf(out, "        // unsupported assert scope: %s.%s contains %s\n", (yyvsp[-4].str), (yyvsp[-2].str), (yyvsp[0].str));
         }
     }
-#line 1416 "testlang.tab.c"
+#line 1463 "testlang.tab.c"
     break;
 
 
-#line 1420 "testlang.tab.c"
+#line 1467 "testlang.tab.c"
 
       default: break;
     }
@@ -1609,7 +1656,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 295 "testlang.y"
+#line 342 "testlang.y"
 
 
 int main(int argc, char **argv) {

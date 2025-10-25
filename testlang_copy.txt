@@ -8,7 +8,6 @@ extern int yylex();
 extern FILE *yyin;
 
 FILE *out;
-static int auto_test_index = 0;
 
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
@@ -64,66 +63,6 @@ static void headers_append(const char* s) {
     if (cur + add + 1 < sizeof(default_headers)) {
         memcpy(default_headers + cur, s, add + 1);
     }
-}
-
-/* Buffer for variable value logs */
-static char vars_print[8192];
-static void vars_append(const char* s) {
-    size_t cur = strlen(vars_print);
-    size_t add = strlen(s);
-    if (cur + add + 1 < sizeof(vars_print)) {
-        memcpy(vars_print + cur, s, add + 1);
-    }
-}
-
-/* Build a Java String expression with $var interpolation for bodies */
-static char* build_string_expr_with_vars(const char* yylval_str) {
-    const char* s = yylval_str;
-    size_t len = strlen(s);
-    const char* p = s;
-    const char* end = s + len;
-    if (len >= 2 && s[0] == '"' && s[len-1] == '"') {
-        p = s + 1;
-        end = s + len - 1;
-    }
-    char buf[8192];
-    size_t pos = 0;
-    int in_quote = 0;
-    pos += snprintf(buf + pos, sizeof(buf) - pos, "\"");
-    in_quote = 1;
-    while (p < end && pos < sizeof(buf) - 1) {
-        if (*p == '$') {
-            if (in_quote) {
-                pos += snprintf(buf + pos, sizeof(buf) - pos, "\" + ");
-                in_quote = 0;
-            }
-            p++;
-            const char* start = p;
-            while (p < end && (isalnum((unsigned char)*p) || *p == '_')) p++;
-            size_t n = (size_t)(p - start);
-            char var[128];
-            if (n > sizeof(var) - 1) n = sizeof(var) - 1;
-            memcpy(var, start, n);
-            var[n] = '\0';
-            pos += snprintf(buf + pos, sizeof(buf) - pos, "%s + ", var);
-            pos += snprintf(buf + pos, sizeof(buf) - pos, "\"");
-            in_quote = 1;
-            continue;
-        }
-        if (*p == '\\' || *p == '"') {
-            pos += snprintf(buf + pos, sizeof(buf) - pos, "\\%c", *p);
-        } else {
-            pos += snprintf(buf + pos, sizeof(buf) - pos, "%c", *p);
-        }
-        p++;
-    }
-    if (in_quote) {
-        pos += snprintf(buf + pos, sizeof(buf) - pos, "\"");
-    }
-    char* out = (char*)malloc(pos + 1);
-    memcpy(out, buf, pos);
-    out[pos] = '\0';
-    return out;
 }
 
 /* Build a Java expression for URL from a DSL string that may include $vars.
@@ -191,8 +130,7 @@ static char* build_url_expr_from_string(const char* yylval_str) {
 %token <str> TEST REQUEST ASSERT METHOD URL HEADERS BODY
 %token <str> STRING IDENTIFIER HTTP_METHOD VARREF
 %token <num> NUMBER
-%token EQ CONTAINS ASSIGN SEMICOLON
-%token EXPECT
+%token EQ CONTAINS ASSIGN SEMICOLON
 %token CONFIG BASE_URL HEADER LET
 %token LBRACE RBRACE COLON DOT
 
@@ -242,10 +180,7 @@ var_list:
 
 var_decl:
     LET IDENTIFIER ASSIGN value SEMICOLON {
-        fprintf(out, "    private static final String %s = %s;\n", $2, $4);
-        char vbuf[512];
-        snprintf(vbuf, sizeof(vbuf), "        System.out.println(\\\"var %s=\\\" + %s);\n", $2, $2);
-        vars_append(vbuf);
+        fprintf(out, "    private static final String %s = %s;\n", $2, $4);
     }
 ;
 
@@ -276,10 +211,6 @@ test:
         fprintf(out, "%s", default_headers);
         asserts_reset();
     } test_body RBRACE {
-        // Logging variables and request details
-        fprintf(out, "%s", vars_print);
-        fprintf(out, "        System.out.println(\"REQUEST: \" + method + \" \" + url);\n");
-        fprintf(out, "        if (body != null) System.out.println(\"BODY: \" + body);\n");
         fprintf(out, "        if (url != null) builder.uri(URI.create(url));\n");
         fprintf(out, "        if (\"GET\".equalsIgnoreCase(method)) {\n");
         fprintf(out, "            builder = builder.GET();\n");
@@ -295,8 +226,7 @@ test:
         fprintf(out, "%s", assert_buffer);
         fprintf(out, "    }\n");
     }
-  | simple_test
-;
+;
 
 test_body:
     request_section assert_section
@@ -344,135 +274,8 @@ header:
 body_opt:
     /* empty */
   | BODY COLON STRING {
-        char* expr = build_string_expr_with_vars($3);
-        fprintf(out, "        body = %s;\n", expr);
-        free(expr);
+        fprintf(out, "        body = %s;\n", $3);
     }
-;
-
-/* ---------- SHORTHAND SIMPLE TESTS ---------- */
-
-/* Form:
-   METHOD "URL" { header "K" = "V"; body = "..."; };
-   expect status = 200;
-   expect header "K" = "V";
-   expect header "K" contains "str";
-   expect body contains "str";
-*/
-
-simple_test:
-    HTTP_METHOD STRING {
-        auto_test_index++;
-        fprintf(out, "\n    @Test\n");
-        fprintf(out, "    public void autoTest%d() throws Exception {\n", auto_test_index);
-        fprintf(out, "        String method = null;\n");
-        fprintf(out, "        String url = null;\n");
-        fprintf(out, "        String body = null;\n");
-        fprintf(out, "        int expectedStatus = 200;\n");
-        fprintf(out, "        HttpRequest.Builder builder = HttpRequest.newBuilder();\n");
-        fprintf(out, "%s", default_headers);
-        asserts_reset();
-        fprintf(out, "        method = \"%s\";\n", $1);
-        char* url_expr = build_url_expr_from_string($2);
-        fprintf(out, "        url = %s;\n", url_expr);
-        free(url_expr);
-    } simple_req_block_opt SEMICOLON simple_expect_list {
-        // Logging variables and request details
-        fprintf(out, "%s", vars_print);
-        fprintf(out, "        System.out.println(\"REQUEST: \" + method + \" \" + url);\n");
-        fprintf(out, "        if (body != null) System.out.println(\"BODY: \" + body);\n");
-        fprintf(out, "        if (url != null) builder.uri(URI.create(url));\n");
-        fprintf(out, "        if (\"GET\".equalsIgnoreCase(method)) {\n");
-        fprintf(out, "            builder = builder.GET();\n");
-        fprintf(out, "        } else if (body != null) {\n");
-        fprintf(out, "            builder = builder.method(method, HttpRequest.BodyPublishers.ofString(body));\n");
-        fprintf(out, "        } else {\n");
-        fprintf(out, "            builder = builder.method(method, HttpRequest.BodyPublishers.noBody());\n");
-        fprintf(out, "        }\n");
-        fprintf(out, "        HttpRequest request = builder.build();\n");
-        fprintf(out, "        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());\n");
-        fprintf(out, "        Assertions.assertEquals(expectedStatus, response.statusCode());\n");
-        fprintf(out, "        String bodyStr = response.body();\n");
-        fprintf(out, "%s", assert_buffer);
-        fprintf(out, "    }\n");
-    }
-;
-
-simple_req_block_opt:
-      /* empty */
-    | LBRACE simple_req_items RBRACE
-;
-
-simple_req_items:
-      simple_req_item
-    | simple_req_items simple_req_item
-;
-
-simple_req_item:
-      HEADER STRING ASSIGN STRING SEMICOLON {
-          fprintf(out, "        builder.header(%s, %s);\n", $2, $4);
-      }
-    | BODY ASSIGN STRING SEMICOLON {
-          char* expr2 = build_string_expr_with_vars($3);
-          fprintf(out, "        body = %s;\n", expr2);
-          free(expr2);
-      }
-;
-
-simple_expect_list:
-      simple_expect
-    | simple_expect_list simple_expect
-;
-
-simple_expect:
-      EXPECT IDENTIFIER ASSIGN NUMBER SEMICOLON {
-          if (strcmp($2, "status") == 0) {
-              fprintf(out, "        expectedStatus = %d;\n", $4);
-          } else {
-              fprintf(out, "        // unsupported expect: %s = %d\n", $2, $4);
-          }
-      }
-    | EXPECT HEADER STRING ASSIGN STRING SEMICOLON {
-          char buf[512];
-          char* key_msg = strip_outer_quotes($3);
-          char* key_msg_esc = escape_java_literal(key_msg);
-          char* val_msg = strip_outer_quotes($5);
-          char* val_msg_esc = escape_java_literal(val_msg);
-          snprintf(buf, sizeof(buf),
-                   "        Assertions.assertTrue(response.headers().firstValue(%s).orElse(\"\").equals(%s), \"header %s == '%s'\");\n",
-                   $3, $5, key_msg_esc, val_msg_esc);
-          asserts_append(buf);
-          free(key_msg);
-          free(key_msg_esc);
-          free(val_msg);
-          free(val_msg_esc);
-      }
-    | EXPECT HEADER STRING CONTAINS STRING SEMICOLON {
-          char buf[512];
-          char* key_msg = strip_outer_quotes($3);
-          char* key_msg_esc = escape_java_literal(key_msg);
-          char* val_msg = strip_outer_quotes($5);
-          char* val_msg_esc = escape_java_literal(val_msg);
-          snprintf(buf, sizeof(buf),
-                   "        Assertions.assertTrue(response.headers().firstValue(%s).orElse(\"\").contains(%s), \"header %s contains '%s'\");\n",
-                   $3, $5, key_msg_esc, val_msg_esc);
-          asserts_append(buf);
-          free(key_msg);
-          free(key_msg_esc);
-          free(val_msg);
-          free(val_msg_esc);
-      }
-    | EXPECT BODY CONTAINS STRING SEMICOLON {
-          char buf[512];
-          char* msg_raw = strip_outer_quotes($4);
-          char* msg_esc = escape_java_literal(msg_raw);
-          snprintf(buf, sizeof(buf),
-                   "        Assertions.assertTrue(bodyStr.contains(%s), \"body contains '%s'\");\n",
-                   $4, msg_esc);
-          asserts_append(buf);
-          free(msg_raw);
-          free(msg_esc);
-      }
 ;
 
 /* ---------- ASSERT SECTION ---------- */
@@ -571,4 +374,5 @@ int main(int argc, char **argv) {
     fclose(out);
     return 0;
 }
+
 

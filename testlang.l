@@ -16,6 +16,9 @@ int line_num = 1;
 "HEADERS"               { return HEADERS; }
 "BODY"                  { return BODY; }
 
+"expect"               { return EXPECT; }
+"body"                 { return BODY; }
+
 "config"               { return CONFIG; }
 "base_url"            { return BASE_URL; }
 "header"              { return HEADER; }
@@ -38,7 +41,7 @@ int line_num = 1;
 ":"                     { return COLON; }
 "."                     { return DOT; }
 
-\"([^"]*)\"             {
+\"([^\\\"]|\\.)*\"       {
     yylval.str = strdup(yytext);
     return STRING;
 }

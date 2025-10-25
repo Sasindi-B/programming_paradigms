@@ -1,54 +1,70 @@
-import java.net.http.HttpResponse;
-import java.util.regex.Pattern;
+import org.junit.jupiter.api.*;
+import java.net.http.*;
+import java.net.URI;
 
 public class GeneratedTests {
-    private static void assertContains(String body, String needle, String message) {
-        if (body == null || !body.contains(needle)) {
-            throw new RuntimeException("Assertion failed: " + message + " (missing '" + needle + "')\nBody: " + body);
+    private static final HttpClient client = HttpClient.newHttpClient();
+    private static final String BASE_URL = "http://localhost:8080";
+    private static final String user = "admin";
+    private static final String id = "42";
+
+    @Test
+    public void getUser() throws Exception {
+        String method = null;
+        String url = null;
+        String body = null;
+        int expectedStatus = 200;
+        HttpRequest.Builder builder = HttpRequest.newBuilder();
+        builder.header("Content-Type", "application/json");
+        builder.header("X-App", "TestLangDemo");
+        method = "GET";
+        url = BASE_URL + "/api/users/" + id + "";
+        expectedStatus = 200;
+        if (url != null) builder.uri(URI.create(url));
+        if ("GET".equalsIgnoreCase(method)) {
+            builder = builder.GET();
+        } else if (body != null) {
+            builder = builder.method(method, HttpRequest.BodyPublishers.ofString(body));
+        } else {
+            builder = builder.method(method, HttpRequest.BodyPublishers.noBody());
         }
+        HttpRequest request = builder.build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(expectedStatus, response.statusCode());
+        String bodyStr = response.body();
     }
 
-    private static void assertRegex(String body, String regex, String message) {
-        if (body == null || !Pattern.compile(regex).matcher(body).find()) {
-            throw new RuntimeException("Assertion failed: " + message + " (regex '" + regex + "' not found)\nBody: " + body);
+    @Test
+    public void createUser() throws Exception {
+        String method = null;
+        String url = null;
+        String body = null;
+        int expectedStatus = 200;
+        HttpRequest.Builder builder = HttpRequest.newBuilder();
+        builder.header("Content-Type", "application/json");
+        builder.header("X-App", "TestLangDemo");
+        method = "POST";
+        url = BASE_URL + "/api/post";
+        body = "{\"hello\":\"world\",\"n\":123}";
+        expectedStatus = 201;
+        if (url != null) builder.uri(URI.create(url));
+        if ("GET".equalsIgnoreCase(method)) {
+            builder = builder.GET();
+        } else if (body != null) {
+            builder = builder.method(method, HttpRequest.BodyPublishers.ofString(body));
+        } else {
+            builder = builder.method(method, HttpRequest.BodyPublishers.noBody());
         }
-    }
-
-    public static void testGet() throws Exception {
-        HttpResponse<String> resp = HttpUtil.sendGet("http://localhost:8080/api/get");
-        if (resp.statusCode() != 200) {
-            throw new RuntimeException("GET /api/get expected 200, got " + resp.statusCode());
-        }
-        String body = resp.body();
-        // Validate expected fields from GET response
-        assertContains(body, "\"status\":\"success\"", "GET should include status=success");
-        assertContains(body, "\"message\":\"GET request received\"", "GET should include message");
-        assertRegex(body, "\\\"timestamp\\\"\\s*:\\s*\\d+", "GET should include numeric timestamp");
-        System.out.println("Assertions passed: GET status/body");
-    }
-
-    /**
-     * @throws Exception
-     */
-    public static void testPost() throws Exception {
-        String payload = "{\"programming\":\"paradigms\",\"n\":assignmets}";
-        HttpResponse<String> resp = HttpUtil.sendPost("http://localhost:8080/api/post", payload);
-        if (resp.statusCode() != 201) {
-            throw new RuntimeException("POST /api/post expected 201, got " + resp.statusCode());
-        }
-        String body = resp.body();
-        // Validate expected fields from POST response
-        assertContains(body, "\"status\":\"created\"", "POST should include status=created");
-        assertContains(body, "\"message\":\"POST ok\"", "POST should include message");
-        // Validate that inputs were echoed under 'received'
-        assertRegex(body, "\\\"received\\\"\\s*:\\s*\\{[\\s\\S]*\\\"programming\\\"\\s*:\\s*\\\"paradigms\\\"[\\s\\S]*\\\}", "POST should echo 'programming' in received");
-        assertRegex(body, "\\\"received\\\"\\s*:\\s*\\{[\\s\\S]*\\\"n\\\"\\s*:\\s*assignmets[\\s\\S]*\\\}", "POST should echo 'n' in received");
-        System.out.println("Assertions passed: POST status/body/echoed inputs");
-    }
-
-    // Expected: GET -> 200 + fields, POST -> 201 + echoed inputs
-    public static void main(String[] args) throws Exception {
-        testGet();
-        testPost();
+        HttpRequest request = builder.build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        Assertions.assertEquals(expectedStatus, response.statusCode());
+        String bodyStr = response.body();
+        Assertions.assertTrue(bodyStr.contains("\"message\":\"POST ok\""), "body.message == 'POST ok'");
+        Assertions.assertTrue(bodyStr.contains("\"received\""), "body has field received");
+        Assertions.assertTrue(bodyStr.contains("programming"), "body.received contains 'programming'");
+        Assertions.assertTrue(bodyStr.contains("\"received\""), "body has field received");
+        Assertions.assertTrue(bodyStr.contains("paradigms"), "body.received contains 'paradigms'");
+        Assertions.assertTrue(bodyStr.contains("\"received\""), "body has field received");
+        Assertions.assertTrue(bodyStr.contains("assignments"), "body.received contains 'assignments'");
     }
 }
